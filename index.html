@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>可重现随机字符串生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+            width: 90%;
+            max-width: 850px;
+            padding: 40px 30px;
+            text-align: center;
+            margin-top: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .container::before {
+            content: "";
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: linear-gradient(45deg, #ff00cc, #333399, #00ccff, #ff9933);
+            z-index: -1;
+            filter: blur(20px);
+            opacity: 0.4;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.8rem;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+            position: relative;
+            display: inline-block;
+        }
+        
+        h1::after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            left: 25%;
+            right: 25%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #3498db, transparent);
+            border-radius: 2px;
+        }
+        
+        .input-section {
+            margin-bottom: 30px;
+            background: linear-gradient(120deg, #e0f7fa, #bbdefb);
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            position: relative;
+        }
+        
+        .input-section::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3498db, #9b59b6, #1abc9c);
+        }
+        
+        .input-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .input-controls {
+            display: flex;
+            gap: 12px;
+        }
+        
+        #specify-btn {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            border: none;
+            padding: 14px 35px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            box-shadow: 0 6px 15px rgba(52, 152, 219, 0.35);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #specify-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 18px rgba(52, 152, 219, 0.5);
+        }
+        
+        #specify-btn:active {
+            transform: translateY(1px);
+        }
+        
+        #specify-btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: all 0.5s;
+        }
+        
+        #specify-btn:hover::before {
+            left: 100%;
+        }
+        
+        input {
+            padding: 13px 18px;
+            font-size: 1.1rem;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            text-align: center;
+            width: 120px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.15);
+            transition: all 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #9b59b6;
+            box-shadow: 0 4px 12px rgba(155, 89, 182, 0.25);
+            transform: scale(1.05);
+        }
+        
+        .output-section {
+            padding: 25px;
+            background: linear-gradient(135deg, #f8f9fa, #eaeaea);
+            border-radius: 12px;
+            margin-top: 10px;
+            min-height: 350px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .strings-container {
+            max-height: 380px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .string-line {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 1.7rem;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            margin: 20px auto;
+            padding: 18px;
+            width: 90%;
+            background: linear-gradient(135deg, #ffffff, #f0f9ff);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            color: #2c3e50;
+            position: relative;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            text-transform: lowercase;
+        }
+        
+        .string-line:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        .string-line::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background: linear-gradient(to bottom, #3498db, #9b59b6);
+            border-radius: 3px 0 0 3px;
+        }
+        
+        .line-number {
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-right: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
+        }
+        
+        .info {
+            font-size: 0.95rem;
+            color: #7f8c8d;
+            margin-top: 15px;
+            font-style: italic;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 8px;
+        }
+        
+        .error {
+            color: #e74c3c;
+            height: 25px;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .input-section {
+                padding: 20px 15px;
+            }
+            
+            .input-controls {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            input {
+                width: 100%;
+            }
+            
+            .string-line {
+                font-size: 1.5rem;
+                padding: 15px;
+                width: 95%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.9rem;
+            }
+            
+            #specify-btn {
+                padding: 12px 25px;
+                font-size: 1.1rem;
+            }
+            
+            .line-number {
+                width: 38px;
+                height: 38px;
+                font-size: 1rem;
+            }
+            
+            .string-line {
+                font-size: 1.3rem;
+                padding: 12px;
+            }
+        }
+        
+        /* 滚动条样式 */
+        .strings-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .strings-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+        
+        .strings-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(#3498db, #9b59b6);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>可重现随机字符串生成器</h1>
+        
+        <div class="input-section">
+            <div class="input-group">
+                <div class="input-controls">
+                    <input type="number" id="number-input" min="1" max="999" placeholder="1-999">
+                    <button id="specify-btn">生成字符串</button>
+                </div>
+            </div>
+            <p class="info">同一个编号每次生成的结果完全相同</p>
+            <div class="error" id="input-error"></div>
+        </div>
+        
+        <div class="output-section">
+            <div id="strings-container" class="strings-container">
+                <p id="placeholder-text">请输入一个1到999之间的编号，然后点击"生成字符串"按钮</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('specify-btn').addEventListener('click', function() {
+            const inputValue = parseInt(document.getElementById('number-input').value);
+            const errorElement = document.getElementById('input-error');
+            
+            // 验证输入
+            if (isNaN(inputValue) || inputValue < 1 || inputValue > 999) {
+                errorElement.textContent = '请输入1到999之间的数字';
+                return;
+            }
+            
+            // 清除错误信息
+            errorElement.textContent = '';
+            
+            // 生成随机字符串
+            generateStrings(inputValue);
+        });
+        
+        // 可重现的随机字符串生成函数
+        function generateStrings(seed) {
+            // 可重现的随机数生成器
+            function mulberry32(seed) {
+                return function() {
+                    seed |= 0;
+                    seed = seed + 0x6D2B79F5 | 0;
+                    var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+                    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+                };
+            }
+            
+            // 初始化随机数生成器
+            const rand = mulberry32(seed);
+            
+            // 生成随机小写字母
+            function generateRandomLetter() {
+                const chars = 'abcdefghijklmnopqrstuvwxyz'; // 使用小写字母
+                return chars.charAt(Math.floor(rand() * chars.length));
+            }
+            
+            // 生成6位随机小写字母字符串
+            function generateRandomString() {
+                let result = '';
+                for (let i = 0; i < 6; i++) {
+                    result += generateRandomLetter();
+                }
+                return result;
+            }
+            
+            // 清空输出区域
+            const outputContainer = document.getElementById('strings-container');
+            outputContainer.innerHTML = '';
+            
+            // 生成10个随机字符串并显示，带行号
+            for (let i = 0; i < 10; i++) {
+                const randomString = generateRandomString();
+                const div = document.createElement('div');
+                div.className = 'string-line';
+                
+                // 添加行号
+                const lineNumber = document.createElement('div');
+                lineNumber.className = 'line-number';
+                lineNumber.textContent = (i+1);
+                
+                // 添加字符串
+                const stringText = document.createElement('div');
+                stringText.textContent = randomString;
+                
+                // 添加元素
+                div.appendChild(lineNumber);
+                div.appendChild(stringText);
+                
+                outputContainer.appendChild(div);
+            }
+        }
+        
+        // 处理回车键
+        document.getElementById('number-input').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                document.getElementById('specify-btn').click();
+            }
+        });
+    </script>
+</body>
+</html>
